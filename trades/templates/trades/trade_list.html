@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="mb-0">Trades</h2>
+  <div>
+    <a class="btn btn-primary" href="{% url 'trades:add' %}">Add Trade</a>
+    <a class="btn btn-outline-secondary" href="{% url 'trades:list' %}">Reset Filters</a>
+  </div>
+ </div>
+
+<form method="get" class="card mb-4 p-3">
+  <div class="row g-3">
+    <div class="col-md-3">
+      <label class="form-label fw-semibold">Type</label>
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" name="type" id="t-crypto" value="crypto" {% if 'crypto' in selected_types %}checked{% endif %}>
+        <label class="form-check-label" for="t-crypto">Crypto</label>
+      </div>
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" name="type" id="t-forex" value="forex" {% if 'forex' in selected_types %}checked{% endif %}>
+        <label class="form-check-label" for="t-forex">Forex</label>
+      </div>
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" name="type" id="t-index" value="index" {% if 'index' in selected_types %}checked{% endif %}>
+        <label class="form-check-label" for="t-index">Index</label>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <label class="form-label fw-semibold">Result</label>
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" name="result" id="r-take" value="take" {% if 'take' in selected_results %}checked{% endif %}>
+        <label class="form-check-label" for="r-take">Take</label>
+      </div>
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" name="result" id="r-loss" value="loss" {% if 'loss' in selected_results %}checked{% endif %}>
+        <label class="form-check-label" for="r-loss">Loss</label>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <label class="form-label fw-semibold">Direction</label>
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" name="direction" id="d-long" value="long" {% if 'long' in selected_directions %}checked{% endif %}>
+        <label class="form-check-label" for="d-long">Long</label>
+      </div>
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" name="direction" id="d-short" value="short" {% if 'short' in selected_directions %}checked{% endif %}>
+        <label class="form-check-label" for="d-short">Short</label>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <label class="form-label fw-semibold">Tags</label>
+      <div class="border rounded p-2" style="max-height: 160px; overflow-y: auto;">
+        {% for tag in all_tags %}
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="tags" id="tag-{{tag.id}}" value="{{tag.id}}" {% if tag.id in selected_tags %}checked{% endif %}>
+            <label class="form-check-label" for="tag-{{tag.id}}">{{ tag.name }}</label>
+          </div>
+        {% empty %}
+          <p class="text-muted mb-0">No tags yet.</p>
+        {% endfor %}
+      </div>
+    </div>
+
+  </div>
+  <div class="row g-3 mt-1">
+    <div class="col-md-3">
+      <label class="form-label fw-semibold" for="symbol-input">Symbol</label>
+      <input id="symbol-input" class="form-control" type="text" name="symbol" value="{{ q_symbol }}" list="symbols" placeholder="e.g., ETH/USDT">
+      <datalist id="symbols">
+        {% for s in all_symbols %}
+          {% if s %}<option value="{{ s }}">{% endif %}
+        {% endfor %}
+      </datalist>
+    </div>
+    <div class="col-12">
+      <button class="btn btn-success" type="submit">Apply Filters</button>
+    </div>
+  </div>
+</form>
+
+<div class="table-responsive">
+  <table class="table table-sm table-hover align-middle">
+    <thead class="table-light">
+      <tr>
+        <th>Date</th>
+        <th>Type</th>
+        <th>Symbol</th>
+        <th>Dir</th>
+        <th>Price</th>
+        <th>SL</th>
+        <th>Volume</th>
+        <th>Result</th>
+        <th>Risk %</th>
+        <th>R/R</th>
+        <th>Images</th>
+        <th>Tags</th>
+        <th>Comment</th>
+        <th class="text-end">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for t in trades %}
+      <tr>
+        <td>{{ t.date|date:"Y-m-d H:i" }}</td>
+        <td>{{ t.get_type_display }}</td>
+        <td>{{ t.symbol }}</td>
+        <td>{{ t.get_direction_display }}</td>
+        <td>{{ t.price }}</td>
+        <td>{{ t.stop_loss_price }}</td>
+        <td>{{ t.volume }}</td>
+        <td>
+          {% if t.result == 'take' %}
+            <span class="badge bg-success">Take</span>
+          {% else %}
+            <span class="badge bg-danger">Loss</span>
+          {% endif %}
+        </td>
+        <td>{{ t.risk_percent }}%</td>
+        <td>{{ t.risk_reward_ratio }}</td>
+        <td>
+          {% if t.large_timeframe_image %}
+            <a href="{{ t.large_timeframe_image.url }}" target="_blank"><img src="{{ t.large_timeframe_image.url }}" style="max-height:48px" class="me-1 rounded"></a>
+          {% endif %}
+          {% if t.medium_timeframe_image %}
+            <a href="{{ t.medium_timeframe_image.url }}" target="_blank"><img src="{{ t.medium_timeframe_image.url }}" style="max-height:48px" class="me-1 rounded"></a>
+          {% endif %}
+          {% if t.short_timeframe_image %}
+            <a href="{{ t.short_timeframe_image.url }}" target="_blank"><img src="{{ t.short_timeframe_image.url }}" style="max-height:48px" class="rounded"></a>
+          {% endif %}
+        </td>
+        <td>
+          {% for tag in t.tags.all %}
+            <span class="badge text-bg-secondary">{{ tag.name }}</span>
+          {% empty %}
+            <span class="text-muted">—</span>
+          {% endfor %}
+        </td>
+        <td style="max-width: 280px">{{ t.comment }}</td>
+        <td class="text-end">
+          <a class="btn btn-sm btn-outline-primary" href="{% url 'trades:edit' t.pk %}">Edit</a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="12" class="text-center text-muted py-4">No trades yet.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% if is_paginated %}
+  <nav>
+    <ul class="pagination">
+      {% if page_obj.has_previous %}
+        <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a></li>
+      {% else %}
+        <li class="page-item disabled"><span class="page-link">Previous</span></li>
+      {% endif %}
+      <li class="page-item disabled"><span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
+      {% if page_obj.has_next %}
+        <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a></li>
+      {% else %}
+        <li class="page-item disabled"><span class="page-link">Next</span></li>
+      {% endif %}
+    </ul>
+  </nav>
+{% endif %}
+
+{% endblock %}

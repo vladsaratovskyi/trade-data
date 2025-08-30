@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Statistics</h2>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-3">
+    <div class="card text-center">
+      <div class="card-body">
+        <div class="text-muted">Total</div>
+        <div class="display-6">{{ total }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-center">
+      <div class="card-body">
+        <div class="text-muted">Wins</div>
+        <div class="display-6 text-success">{{ wins }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-center">
+      <div class="card-body">
+        <div class="text-muted">Losses</div>
+        <div class="display-6 text-danger">{{ losses }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-center">
+      <div class="card-body">
+        <div class="text-muted">Win Rate</div>
+        <div class="display-6">{{ win_rate|floatformat:1 }}%</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-body">
+        <h5>By Type</h5>
+        <table class="table table-sm">
+          <thead><tr><th>Type</th><th>Total</th><th>Wins</th><th>Losses</th><th>Avg R/R</th></tr></thead>
+          <tbody>
+            {% for row in by_type %}
+              <tr>
+                <td>{{ row.type|capfirst }}</td>
+                <td>{{ row.total }}</td>
+                <td class="text-success">{{ row.wins }}</td>
+                <td class="text-danger">{{ row.losses }}</td>
+                <td>{{ row.avg_rr|default:0|floatformat:2 }}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="5" class="text-muted">No data</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-body">
+        <h5>By Direction</h5>
+        <table class="table table-sm">
+          <thead><tr><th>Direction</th><th>Total</th><th>Wins</th><th>Losses</th><th>Avg R/R</th></tr></thead>
+          <tbody>
+            {% for row in by_direction %}
+              <tr>
+                <td>{{ row.direction|capfirst }}</td>
+                <td>{{ row.total }}</td>
+                <td class="text-success">{{ row.wins }}</td>
+                <td class="text-danger">{{ row.losses }}</td>
+                <td>{{ row.avg_rr|default:0|floatformat:2 }}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="5" class="text-muted">No data</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-6">
+    <div class="card text-center h-100">
+      <div class="card-body">
+        <div class="text-muted">Average R/R</div>
+        <div class="display-6">{{ avg_rr|floatformat:2 }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card text-center h-100">
+      <div class="card-body">
+        <div class="text-muted">Average Risk %</div>
+        <div class="display-6">{{ avg_risk_pct|floatformat:2 }}%</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
