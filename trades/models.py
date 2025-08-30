@@ -37,15 +37,18 @@ class Trade(models.Model):
     direction = models.CharField(max_length=10, choices=Direction.choices)
     date = models.DateTimeField(default=timezone.now)
 
-    large_timeframe_image = models.ImageField(
-        upload_to="trades/ltf/", null=True, blank=True
-    )
-    medium_timeframe_image = models.ImageField(
-        upload_to="trades/mtf/", null=True, blank=True
-    )
-    short_timeframe_image = models.ImageField(
-        upload_to="trades/stf/", null=True, blank=True
-    )
+    # Image binaries stored in DB (not filesystem)
+    large_image = models.BinaryField(null=True, blank=True, editable=False)
+    large_image_content_type = models.CharField(max_length=100, null=True, blank=True)
+    large_image_name = models.CharField(max_length=255, null=True, blank=True)
+
+    medium_image = models.BinaryField(null=True, blank=True, editable=False)
+    medium_image_content_type = models.CharField(max_length=100, null=True, blank=True)
+    medium_image_name = models.CharField(max_length=255, null=True, blank=True)
+
+    short_image = models.BinaryField(null=True, blank=True, editable=False)
+    short_image_content_type = models.CharField(max_length=100, null=True, blank=True)
+    short_image_name = models.CharField(max_length=255, null=True, blank=True)
 
     risk_percent = models.DecimalField(max_digits=6, decimal_places=2, help_text="% of account at risk")
     risk_reward_ratio = models.DecimalField(max_digits=8, decimal_places=2)

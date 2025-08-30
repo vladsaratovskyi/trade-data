@@ -123,14 +123,14 @@
         <td>{{ t.risk_percent }}%</td>
         <td>{{ t.risk_reward_ratio }}</td>
         <td>
-          {% if t.large_timeframe_image %}
-            <a href="{{ t.large_timeframe_image.url }}" target="_blank"><img src="{{ t.large_timeframe_image.url }}" style="max-height:48px" class="me-1 rounded"></a>
+          {% if t.large_image %}
+            <a href="{% url 'trades:image' t.pk 'ltf' %}" target="_blank"><img src="{% url 'trades:image' t.pk 'ltf' %}" style="max-height:48px" class="me-1 rounded"></a>
           {% endif %}
-          {% if t.medium_timeframe_image %}
-            <a href="{{ t.medium_timeframe_image.url }}" target="_blank"><img src="{{ t.medium_timeframe_image.url }}" style="max-height:48px" class="me-1 rounded"></a>
+          {% if t.medium_image %}
+            <a href="{% url 'trades:image' t.pk 'mtf' %}" target="_blank"><img src="{% url 'trades:image' t.pk 'mtf' %}" style="max-height:48px" class="me-1 rounded"></a>
           {% endif %}
-          {% if t.short_timeframe_image %}
-            <a href="{{ t.short_timeframe_image.url }}" target="_blank"><img src="{{ t.short_timeframe_image.url }}" style="max-height:48px" class="rounded"></a>
+          {% if t.short_image %}
+            <a href="{% url 'trades:image' t.pk 'stf' %}" target="_blank"><img src="{% url 'trades:image' t.pk 'stf' %}" style="max-height:48px" class="rounded"></a>
           {% endif %}
         </td>
         <td>

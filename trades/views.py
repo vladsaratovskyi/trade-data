@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from django.db.models import Avg, Count, Q
-from django.shortcuts import render
+from django.http import Http404, HttpResponse
+from django.shortcuts import get_object_or_404, render
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, ListView, UpdateView
 
@@ -117,3 +118,29 @@ def stats_view(request):
         "by_direction": list(by_direction),
     }
     return render(request, "trades/stats.html", context)
+
+
+def trade_image(request, pk: int, kind: str):
+    trade = get_object_or_404(Trade, pk=pk)
+    if kind == "ltf":
+        data = trade.large_image
+        ct = trade.large_image_content_type or "application/octet-stream"
+        filename = trade.large_image_name or "large"
+    elif kind == "mtf":
+        data = trade.medium_image
+        ct = trade.medium_image_content_type or "application/octet-stream"
+        filename = trade.medium_image_name or "medium"
+    elif kind == "stf":
+        data = trade.short_image
+        ct = trade.short_image_content_type or "application/octet-stream"
+        filename = trade.short_image_name or "short"
+    else:
+        raise Http404("Unknown image kind")
+
+    if not data:
+        raise Http404("No image")
+    if isinstance(data, memoryview):
+        data = data.tobytes()
+    resp = HttpResponse(data, content_type=ct)
+    resp["Content-Disposition"] = f"inline; filename=\"{filename}\""
+    return resp

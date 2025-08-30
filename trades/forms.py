@@ -7,6 +7,10 @@ class DateTimeLocalInput(forms.DateTimeInput):
 
 
 class TradeForm(forms.ModelForm):
+    # File inputs bound to DB binary fields via save()
+    large_timeframe_image = forms.ImageField(required=False, label="Large timeframe image")
+    medium_timeframe_image = forms.ImageField(required=False, label="Medium timeframe image")
+    short_timeframe_image = forms.ImageField(required=False, label="Short timeframe image")
     new_tags = forms.CharField(
         required=False,
         label="New tags",
@@ -24,9 +28,6 @@ class TradeForm(forms.ModelForm):
             "result",
             "direction",
             "date",
-            "large_timeframe_image",
-            "medium_timeframe_image",
-            "short_timeframe_image",
             "risk_percent",
             "risk_reward_ratio",
             "tags",
@@ -79,4 +80,29 @@ class TradeForm(forms.ModelForm):
                 for name in names:
                     tag, _ = Tag.objects.get_or_create(name=name)
                     instance.tags.add(tag)
+
+        # Store uploaded images into DB binary fields
+        def set_image(kind: str, file_field_name: str):
+            f = self.cleaned_data.get(file_field_name)
+            if f:
+                data = f.read()
+                if kind == "large":
+                    instance.large_image = data
+                    instance.large_image_content_type = getattr(f, "content_type", None) or "application/octet-stream"
+                    instance.large_image_name = getattr(f, "name", None) or "large"
+                elif kind == "medium":
+                    instance.medium_image = data
+                    instance.medium_image_content_type = getattr(f, "content_type", None) or "application/octet-stream"
+                    instance.medium_image_name = getattr(f, "name", None) or "medium"
+                elif kind == "short":
+                    instance.short_image = data
+                    instance.short_image_content_type = getattr(f, "content_type", None) or "application/octet-stream"
+                    instance.short_image_name = getattr(f, "name", None) or "short"
+
+        set_image("large", "large_timeframe_image")
+        set_image("medium", "medium_timeframe_image")
+        set_image("short", "short_timeframe_image")
+
+        if commit:
+            instance.save()
         return instance
