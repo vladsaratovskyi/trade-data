@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="mb-0">Trading Strategies</h2>
+  <div>
+    <a class="btn btn-primary" href="{% url 'trades:strategy_add' %}">Add Strategy</a>
+    <a class="btn btn-outline-secondary" href="{% url 'trades:strategy_list' %}">Refresh</a>
+  </div>
+</div>
+
+<div class="table-responsive">
+  <table class="table table-sm table-hover align-middle">
+    <thead class="table-light">
+      <tr>
+        <th>Name</th>
+        <th>Market Type</th>
+        <th>Updated</th>
+        <th class="text-end">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in strategies %}
+      <tr>
+        <td>{{ s.name }}</td>
+        <td>{{ s.get_type_display }}</td>
+        <td>{{ s.updated_at|date:"Y-m-d H:i" }}</td>
+        <td class="text-end">
+          <a class="btn btn-sm btn-outline-secondary me-1" href="{% url 'trades:strategy_detail' s.pk %}">View</a>
+          <a class="btn btn-sm btn-outline-danger" href="{% url 'trades:strategy_delete' s.pk %}">Delete</a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="4" class="text-center text-muted py-4">No strategies yet.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% if is_paginated %}
+  <nav>
+    <ul class="pagination">
+      {% if page_obj.has_previous %}
+        <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a></li>
+      {% else %}
+        <li class="page-item disabled"><span class="page-link">Previous</span></li>
+      {% endif %}
+      <li class="page-item disabled"><span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
+      {% if page_obj.has_next %}
+        <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a></li>
+      {% else %}
+        <li class="page-item disabled"><span class="page-link">Next</span></li>
+      {% endif %}
+    </ul>
+  </nav>
+{% endif %}
+
+{% endblock %}
+

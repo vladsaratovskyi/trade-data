@@ -7,8 +7,8 @@ from django.urls import reverse_lazy
 from django.views.generic import CreateView, ListView, UpdateView, DetailView
 from django.views.decorators.http import require_POST
 
-from .forms import TradeForm
-from .models import Tag, Trade
+from .forms import TradeForm, StrategyForm
+from .models import Tag, Trade, Strategy
 
 
 class TradeListView(ListView):
@@ -118,6 +118,35 @@ class TradeDetailView(DetailView):
     model = Trade
     template_name = "trades/trade_detail.html"
     context_object_name = "trade"
+
+
+class StrategyListView(ListView):
+    model = Strategy
+    template_name = "trades/strategy_list.html"
+    context_object_name = "strategies"
+    paginate_by = 50
+
+
+class StrategyDetailView(DetailView):
+    model = Strategy
+    template_name = "trades/strategy_detail.html"
+    context_object_name = "strategy"
+
+
+class StrategyCreateView(CreateView):
+    model = Strategy
+    form_class = StrategyForm
+    template_name = "trades/strategy_form.html"
+    success_url = reverse_lazy("trades:strategy_list")
+
+
+from django.views.generic.edit import DeleteView
+
+
+class StrategyDeleteView(DeleteView):
+    model = Strategy
+    template_name = "trades/strategy_confirm_delete.html"
+    success_url = reverse_lazy("trades:strategy_list")
 
 
 def stats_view(request):

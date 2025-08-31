@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="mb-0">Add Strategy</h2>
+  <div>
+    <a class="btn btn-outline-secondary" href="{% url 'trades:strategy_list' %}">Cancel</a>
+  </div>
+</div>
+
+<form method="post" class="card p-3">
+  {% csrf_token %}
+  {{ form.non_field_errors }}
+  <div class="row g-3">
+    <div class="col-md-6">
+      <label class="form-label">Market Type</label>
+      {{ form.type }}
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Name</label>
+      {{ form.name }}
+    </div>
+  </div>
+
+  <div class="row g-3 mt-1">
+    <div class="col-md-6">
+      <label class="form-label">Pre-session TODO</label>
+      {{ form.pre_session_todo }}
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Trading Times</label>
+      {{ form.trading_times }}
+    </div>
+  </div>
+
+  <div class="row g-3 mt-1">
+    <div class="col-md-6">
+      <label class="form-label">Tradable News</label>
+      {{ form.tradable_news }}
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">News To Avoid</label>
+      {{ form.avoid_news }}
+    </div>
+  </div>
+
+  <div class="row g-3 mt-1">
+    <div class="col-md-6">
+      <label class="form-label">Setups</label>
+      {{ form.setups }}
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Pairs Watchlist</label>
+      {{ form.watchlist_pairs }}
+    </div>
+  </div>
+
+  <div class="row g-3 mt-1">
+    <div class="col-md-6">
+      <label class="form-label">Position Management</label>
+      {{ form.position_management }}
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Targets</label>
+      {{ form.targets }}
+    </div>
+  </div>
+
+  <div class="row g-3 mt-1">
+    <div class="col-md-12">
+      <label class="form-label">Stop Trading Rules</label>
+      {{ form.stop_rules }}
+    </div>
+  </div>
+
+  <div class="mt-3">
+    <button class="btn btn-success" type="submit">Save Strategy</button>
+  </div>
+</form>
+
+{% endblock %}

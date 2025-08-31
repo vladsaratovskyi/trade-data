@@ -63,3 +63,30 @@ class Trade(models.Model):
 
     def __str__(self) -> str:  # pragma: no cover
         return f"{self.get_type_display()} {self.get_direction_display()} {self.date:%Y-%m-%d %H:%M}"
+
+
+class Strategy(models.Model):
+    """Trading strategy per market type with key playbook fields."""
+
+    type = models.CharField(max_length=10, choices=Trade.TradeType.choices)
+    name = models.CharField(max_length=100)
+
+    pre_session_todo = models.TextField(blank=True, help_text="Checklist before trading session")
+    trading_times = models.TextField(blank=True, help_text="Timings for trading (sessions, hours)")
+    tradable_news = models.TextField(blank=True, help_text="News/events we can trade")
+    avoid_news = models.TextField(blank=True, help_text="News/events to avoid")
+    setups = models.TextField(blank=True, help_text="Setups being used")
+    watchlist_pairs = models.TextField(blank=True, help_text="Pairs being watched")
+    position_management = models.TextField(blank=True, help_text="Position management information")
+    targets = models.TextField(blank=True, help_text="Targets and take-profit planning")
+    stop_rules = models.TextField(blank=True, help_text="Rules for when to stop trading")
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["type", "name"]
+        unique_together = ("type", "name")
+
+    def __str__(self) -> str:  # pragma: no cover
+        return f"{self.get_type_display()} — {self.name}"
