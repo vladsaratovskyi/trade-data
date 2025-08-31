@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from django.db.models import Avg, Count, Q
 from django.http import Http404, HttpResponse
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, render, redirect
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, ListView, UpdateView, DetailView
+from django.views.decorators.http import require_POST
 
 from .forms import TradeForm
 from .models import Tag, Trade
@@ -189,3 +190,17 @@ def trade_image(request, pk: int, kind: str):
     resp = HttpResponse(data, content_type=ct)
     resp["Content-Disposition"] = f"inline; filename=\"{filename}\""
     return resp
+
+
+@require_POST
+def bulk_delete_trades(request):
+    ids = request.POST.getlist("ids")
+    id_ints = []
+    for v in ids:
+        try:
+            id_ints.append(int(v))
+        except (TypeError, ValueError):
+            continue
+    if id_ints:
+        Trade.objects.filter(pk__in=id_ints).delete()
+    return redirect("trades:list")

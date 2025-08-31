@@ -1,5 +1,13 @@
 from django.urls import path
-from .views import TradeCreateView, TradeListView, TradeUpdateView, TradeDetailView, stats_view, trade_image
+from .views import (
+    TradeCreateView,
+    TradeListView,
+    TradeUpdateView,
+    TradeDetailView,
+    stats_view,
+    trade_image,
+    bulk_delete_trades,
+)
 
 
 app_name = "trades"
@@ -9,6 +17,7 @@ urlpatterns = [
     path("add/", TradeCreateView.as_view(), name="add"),
     path("edit/<int:pk>/", TradeUpdateView.as_view(), name="edit"),
     path("view/<int:pk>/", TradeDetailView.as_view(), name="detail"),
+    path("bulk-delete/", bulk_delete_trades, name="bulk_delete"),
     path("image/<int:pk>/<str:kind>/", trade_image, name="image"),  # kind: ltf|mtf|stf
     path("stats/", stats_view, name="stats"),
 ]
