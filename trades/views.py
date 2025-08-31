@@ -4,7 +4,7 @@ from django.db.models import Avg, Count, Q
 from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse_lazy
-from django.views.generic import CreateView, ListView, UpdateView
+from django.views.generic import CreateView, ListView, UpdateView, DetailView
 
 from .forms import TradeForm
 from .models import Tag, Trade
@@ -73,6 +73,12 @@ class TradeUpdateView(UpdateView):
     form_class = TradeForm
     template_name = "trades/trade_form.html"
     success_url = reverse_lazy("trades:list")
+
+
+class TradeDetailView(DetailView):
+    model = Trade
+    template_name = "trades/trade_detail.html"
+    context_object_name = "trade"
 
 
 def stats_view(request):

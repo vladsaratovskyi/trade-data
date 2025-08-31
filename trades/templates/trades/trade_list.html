@@ -157,6 +157,7 @@
         </td>
         <td style="max-width: 280px">{{ t.comment }}</td>
         <td class="text-end">
+          <a class="btn btn-sm btn-outline-secondary me-1" href="{% url 'trades:detail' t.pk %}">View</a>
           <a class="btn btn-sm btn-outline-primary" href="{% url 'trades:edit' t.pk %}">Edit</a>
         </td>
       </tr>

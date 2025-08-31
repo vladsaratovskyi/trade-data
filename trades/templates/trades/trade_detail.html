@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="mb-0">Review Trade</h2>
+  <div>
+    <a class="btn btn-outline-secondary" href="{% url 'trades:list' %}">Back to list</a>
+    <a class="btn btn-primary" href="{% url 'trades:edit' trade.pk %}">Edit</a>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header">Overview</div>
+      <div class="card-body">
+        <dl class="row mb-0">
+          <dt class="col-sm-4">Date</dt><dd class="col-sm-8">{{ trade.date|date:"Y-m-d H:i" }}</dd>
+          <dt class="col-sm-4">Type</dt><dd class="col-sm-8">{{ trade.get_type_display }}</dd>
+          <dt class="col-sm-4">Symbol</dt><dd class="col-sm-8">{{ trade.symbol }}</dd>
+          <dt class="col-sm-4">Direction</dt><dd class="col-sm-8">{{ trade.get_direction_display }}</dd>
+          <dt class="col-sm-4">Price</dt><dd class="col-sm-8">{{ trade.price }}</dd>
+          <dt class="col-sm-4">Stop Loss</dt><dd class="col-sm-8">{{ trade.stop_loss_price }}</dd>
+          <dt class="col-sm-4">Volume</dt><dd class="col-sm-8">{{ trade.volume }}</dd>
+          <dt class="col-sm-4">Result</dt>
+          <dd class="col-sm-8">
+            {% if trade.result == 'take' %}
+              <span class="badge bg-success">Take</span>
+            {% else %}
+              <span class="badge bg-danger">Loss</span>
+            {% endif %}
+          </dd>
+          <dt class="col-sm-4">Risk %</dt><dd class="col-sm-8">{{ trade.risk_percent }}%</dd>
+          <dt class="col-sm-4">R/R</dt><dd class="col-sm-8">{{ trade.risk_reward_ratio }}</dd>
+          <dt class="col-sm-4">Tags</dt>
+          <dd class="col-sm-8">
+            {% for tag in trade.tags.all %}
+              <span class="badge text-bg-secondary me-1">{{ tag.name }}</span>
+            {% empty %}
+              <span class="text-muted">—</span>
+            {% endfor %}
+          </dd>
+        </dl>
+      </div>
+    </div>
+
+    <div class="card mt-3">
+      <div class="card-header">Comment</div>
+      <div class="card-body">
+        <p class="mb-0" style="white-space: pre-wrap;">{{ trade.comment|default:"—" }}</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header">Images</div>
+      <div class="card-body text-center">
+        {% if trade.large_image %}
+          <div class="mb-3">
+            <div class="small text-muted text-start">Large timeframe</div>
+            <img class="img-fluid rounded" src="{% url 'trades:image' trade.pk 'ltf' %}" alt="Large timeframe image">
+          </div>
+        {% endif %}
+        {% if trade.medium_image %}
+          <div class="mb-3">
+            <div class="small text-muted text-start">Medium timeframe</div>
+            <img class="img-fluid rounded" src="{% url 'trades:image' trade.pk 'mtf' %}" alt="Medium timeframe image">
+          </div>
+        {% endif %}
+        {% if trade.short_image %}
+          <div>
+            <div class="small text-muted text-start">Short timeframe</div>
+            <img class="img-fluid rounded" src="{% url 'trades:image' trade.pk 'stf' %}" alt="Short timeframe image">
+          </div>
+        {% endif %}
+        {% if not trade.large_image and not trade.medium_image and not trade.short_image %}
+          <p class="text-muted mb-0">No images.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
