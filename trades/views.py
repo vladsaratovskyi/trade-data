@@ -58,6 +58,44 @@ class TradeListView(ListView):
             Trade.objects.exclude(symbol="").values_list("symbol", flat=True)
             .distinct().order_by("symbol")
         )
+        # Stats for the currently filtered queryset (not just current page)
+        filtered_qs = self.get_queryset()
+        total = filtered_qs.count()
+        wins = filtered_qs.filter(result=Trade.Result.TAKE).count()
+        losses = filtered_qs.filter(result=Trade.Result.LOSS).count()
+        win_rate = (wins / total * 100) if total else 0
+        avg_rr = filtered_qs.aggregate(v=Avg("risk_reward_ratio"))["v"] or 0
+        avg_risk_pct = filtered_qs.aggregate(v=Avg("risk_percent"))["v"] or 0
+        by_type = (
+            filtered_qs.values("type")
+            .annotate(
+                total=Count("id"),
+                wins=Count("id", filter=Q(result=Trade.Result.TAKE)),
+                losses=Count("id", filter=Q(result=Trade.Result.LOSS)),
+                avg_rr=Avg("risk_reward_ratio"),
+            )
+            .order_by("type")
+        )
+        by_direction = (
+            filtered_qs.values("direction")
+            .annotate(
+                total=Count("id"),
+                wins=Count("id", filter=Q(result=Trade.Result.TAKE)),
+                losses=Count("id", filter=Q(result=Trade.Result.LOSS)),
+                avg_rr=Avg("risk_reward_ratio"),
+            )
+            .order_by("direction")
+        )
+        ctx["stats"] = {
+            "total": total,
+            "wins": wins,
+            "losses": losses,
+            "win_rate": win_rate,
+            "avg_rr": avg_rr or 0,
+            "avg_risk_pct": avg_risk_pct or 0,
+            "by_type": list(by_type),
+            "by_direction": list(by_direction),
+        }
         return ctx
 
 
