@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="mb-0">{{ strategy.name }}</h2>
+  <div>
+    <a class="btn btn-outline-secondary" href="{% url 'trades:strategy_list' %}">Back to list</a>
+    <a class="btn btn-outline-danger" href="{% url 'trades:strategy_delete' strategy.pk %}">Delete</a>
+  </div>
+</div>
+
+<div class="mb-3">
+  <span class="badge text-bg-primary">{{ strategy.get_type_display }}</span>
+  <span class="small text-muted ms-2">Updated {{ strategy.updated_at|date:"Y-m-d H:i" }}</span>
+  <span class="small text-muted ms-2">Created {{ strategy.created_at|date:"Y-m-d H:i" }}</span>
+  </div>
+
+<div class="row g-4">
+  <div class="col-lg-6">
+    <div class="card mb-3">
+      <div class="card-header">Pre-session TODO</div>
+      <div class="card-body"><pre class="mb-0" style="white-space: pre-wrap;">{{ strategy.pre_session_todo|default:"—" }}</pre></div>
+    </div>
+    <div class="card mb-3">
+      <div class="card-header">Trading Times</div>
+      <div class="card-body"><pre class="mb-0" style="white-space: pre-wrap;">{{ strategy.trading_times|default:"—" }}</pre></div>
+    </div>
+    <div class="card mb-3">
+      <div class="card-header">Setups</div>
+      <div class="card-body"><pre class="mb-0" style="white-space: pre-wrap;">{{ strategy.setups|default:"—" }}</pre></div>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="card mb-3">
+      <div class="card-header">Pairs Watchlist</div>
+      <div class="card-body"><pre class="mb-0" style="white-space: pre-wrap;">{{ strategy.watchlist_pairs|default:"—" }}</pre></div>
+    </div>
+    <div class="card mb-3">
+      <div class="card-header">Position Management</div>
+      <div class="card-body"><pre class="mb-0" style="white-space: pre-wrap;">{{ strategy.position_management|default:"—" }}</pre></div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-6">
+    <div class="card mb-3">
+      <div class="card-header">Tradable News</div>
+      <div class="card-body"><pre class="mb-0" style="white-space: pre-wrap;">{{ strategy.tradable_news|default:"—" }}</pre></div>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="card mb-3">
+      <div class="card-header">News To Avoid</div>
+      <div class="card-body"><pre class="mb-0" style="white-space: pre-wrap;">{{ strategy.avoid_news|default:"—" }}</pre></div>
+    </div>
+  </div>
+</div>
+
+<div class="card mb-3">
+  <div class="card-header">Targets</div>
+  <div class="card-body"><pre class="mb-0" style="white-space: pre-wrap;">{{ strategy.targets|default:"—" }}</pre></div>
+</div>
+
+<div class="card mb-3">
+  <div class="card-header">Stop Trading Rules</div>
+  <div class="card-body"><pre class="mb-0" style="white-space: pre-wrap;">{{ strategy.stop_rules|default:"—" }}</pre></div>
+</div>
+
+{% endblock %}
+

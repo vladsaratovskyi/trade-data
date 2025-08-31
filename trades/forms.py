@@ -1,5 +1,5 @@
 from django import forms
-from .models import Trade, Tag
+from .models import Trade, Tag, Strategy
 
 
 class DateTimeLocalInput(forms.DateTimeInput):
@@ -106,3 +106,32 @@ class TradeForm(forms.ModelForm):
         if commit:
             instance.save()
         return instance
+
+
+class StrategyForm(forms.ModelForm):
+    class Meta:
+        model = Strategy
+        fields = [
+            "type",
+            "name",
+            "pre_session_todo",
+            "trading_times",
+            "tradable_news",
+            "avoid_news",
+            "setups",
+            "watchlist_pairs",
+            "position_management",
+            "targets",
+            "stop_rules",
+        ]
+        widgets = {
+            "pre_session_todo": forms.Textarea(attrs={"rows": 4, "placeholder": "e.g., review news calendar, update watchlist..."}),
+            "trading_times": forms.Textarea(attrs={"rows": 2, "placeholder": "e.g., London session 08:00–11:00, NY 13:00–16:00"}),
+            "tradable_news": forms.Textarea(attrs={"rows": 3}),
+            "avoid_news": forms.Textarea(attrs={"rows": 3}),
+            "setups": forms.Textarea(attrs={"rows": 4}),
+            "watchlist_pairs": forms.Textarea(attrs={"rows": 3, "placeholder": "e.g., EUR/USD, GBP/USD, ETH/USDT"}),
+            "position_management": forms.Textarea(attrs={"rows": 4}),
+            "targets": forms.Textarea(attrs={"rows": 3}),
+            "stop_rules": forms.Textarea(attrs={"rows": 3}),
+        }
