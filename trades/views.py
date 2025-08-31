@@ -55,7 +55,8 @@ class TradeListView(ListView):
         ctx["q_symbol"] = (self.request.GET.get("symbol") or "").strip()
         # For suggestions in filter UI
         ctx["all_symbols"] = (
-            Trade.objects.exclude(symbol="").values_list("symbol", flat=True).distinct().order_by("symbol")
+            Trade.objects.exclude(symbol="").values_list("symbol", flat=True)
+            .distinct().order_by("symbol")
         )
         return ctx
 

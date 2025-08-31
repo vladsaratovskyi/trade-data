@@ -124,13 +124,28 @@
         <td>{{ t.risk_reward_ratio }}</td>
         <td>
           {% if t.large_image %}
-            <a href="{% url 'trades:image' t.pk 'ltf' %}" target="_blank"><img src="{% url 'trades:image' t.pk 'ltf' %}" style="max-height:48px" class="me-1 rounded"></a>
+            <button type="button" class="p-0 border-0 bg-transparent"
+                    data-bs-toggle="modal" data-bs-target="#imageModal"
+                    data-img-src="{% url 'trades:image' t.pk 'ltf' %}"
+                    data-img-title="{{ t.symbol }} — Large timeframe">
+              <img src="{% url 'trades:image' t.pk 'ltf' %}" style="max-height:48px" class="me-1 rounded" alt="Large timeframe image">
+            </button>
           {% endif %}
           {% if t.medium_image %}
-            <a href="{% url 'trades:image' t.pk 'mtf' %}" target="_blank"><img src="{% url 'trades:image' t.pk 'mtf' %}" style="max-height:48px" class="me-1 rounded"></a>
+            <button type="button" class="p-0 border-0 bg-transparent"
+                    data-bs-toggle="modal" data-bs-target="#imageModal"
+                    data-img-src="{% url 'trades:image' t.pk 'mtf' %}"
+                    data-img-title="{{ t.symbol }} — Medium timeframe">
+              <img src="{% url 'trades:image' t.pk 'mtf' %}" style="max-height:48px" class="me-1 rounded" alt="Medium timeframe image">
+            </button>
           {% endif %}
           {% if t.short_image %}
-            <a href="{% url 'trades:image' t.pk 'stf' %}" target="_blank"><img src="{% url 'trades:image' t.pk 'stf' %}" style="max-height:48px" class="rounded"></a>
+            <button type="button" class="p-0 border-0 bg-transparent"
+                    data-bs-toggle="modal" data-bs-target="#imageModal"
+                    data-img-src="{% url 'trades:image' t.pk 'stf' %}"
+                    data-img-title="{{ t.symbol }} — Short timeframe">
+              <img src="{% url 'trades:image' t.pk 'stf' %}" style="max-height:48px" class="rounded" alt="Short timeframe image">
+            </button>
           {% endif %}
         </td>
         <td>
@@ -171,5 +186,43 @@
     </ul>
   </nav>
 {% endif %}
+
+<!-- Image preview modal -->
+<div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-xl">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="imageModalLabel"></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center p-0">
+        <img id="imageModalImg" src="" class="img-fluid" alt="Trade image" style="max-height: 80vh; width: auto;">
+      </div>
+    </div>
+  </div>
+  </div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    var modalEl = document.getElementById('imageModal');
+    if (!modalEl) return;
+    modalEl.addEventListener('show.bs.modal', function (event) {
+      var trigger = event.relatedTarget;
+      if (!trigger) return;
+      var src = trigger.getAttribute('data-img-src');
+      var title = trigger.getAttribute('data-img-title') || '';
+      var imgEl = modalEl.querySelector('#imageModalImg');
+      var titleEl = modalEl.querySelector('#imageModalLabel');
+      if (imgEl) imgEl.src = src || '';
+      if (titleEl) titleEl.textContent = title;
+    });
+    modalEl.addEventListener('hidden.bs.modal', function () {
+      var imgEl = modalEl.querySelector('#imageModalImg');
+      var titleEl = modalEl.querySelector('#imageModalLabel');
+      if (imgEl) imgEl.src = '';
+      if (titleEl) titleEl.textContent = '';
+    });
+  });
+  </script>
 
 {% endblock %}
