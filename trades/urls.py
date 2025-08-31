@@ -11,6 +11,7 @@ from .views import (
     stats_view,
     trade_image,
     bulk_delete_trades,
+    news_view,
 )
 
 
@@ -29,4 +30,5 @@ urlpatterns = [
     path("bulk-delete/", bulk_delete_trades, name="bulk_delete"),
     path("image/<int:pk>/<str:kind>/", trade_image, name="image"),  # kind: ltf|mtf|stf
     path("stats/", stats_view, name="stats"),
+    path("news/", news_view, name="news"),
 ]

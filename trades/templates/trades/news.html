@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="mb-0">Forex News</h2>
+  <div>
+    <a class="btn btn-outline-secondary" href="{% url 'trades:news' %}?refresh=1">Refresh</a>
+    <a class="btn btn-outline-primary" href="https://www.forexfactory.com/news" target="_blank" rel="noopener">Open ForexFactory</a>
+  </div>
+</div>
+
+{% if error %}
+  <div class="alert alert-warning">{{ error }}</div>
+{% endif %}
+
+<div class="list-group mb-4">
+  {% for it in items %}
+    <a class="list-group-item list-group-item-action" href="{{ it.url }}" target="_blank" rel="noopener">
+      <div class="d-flex w-100 justify-content-between">
+        <h6 class="mb-1">{{ it.title }}</h6>
+        {% if it.time %}<small class="text-muted">{{ it.time }}</small>{% endif %}
+      </div>
+      {% if it.summary %}<p class="mb-1 text-muted">{{ it.summary }}</p>{% endif %}
+      <small class="text-muted">{{ it.url }}</small>
+    </a>
+  {% empty %}
+    <div class="list-group-item text-muted">No news items found.</div>
+  {% endfor %}
+</div>
+
+<div class="d-flex justify-content-between align-items-center mb-2">
+  <h4 class="mb-0">Economic Calendar</h4>
+  <a class="btn btn-sm btn-outline-primary" href="https://www.forexfactory.com/calendar" target="_blank" rel="noopener">Open Calendar</a>
+  </div>
+{% if calendar_error %}
+  <div class="alert alert-warning">{{ calendar_error }}</div>
+{% endif %}
+
+{% for day in calendar %}
+  <div class="card mb-3">
+    <div class="card-header">{{ day.label }}</div>
+    <div class="table-responsive">
+      <table class="table table-sm align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th style="width:80px">Time</th>
+            <th style="width:80px">Cur</th>
+            <th>Event</th>
+            <th style="width:100px">Impact</th>
+            <th style="width:100px">Actual</th>
+            <th style="width:100px">Forecast</th>
+            <th style="width:100px">Previous</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for ev in day.events %}
+            <tr>
+              <td class="text-nowrap">{{ ev.time }}</td>
+              <td class="text-nowrap">{{ ev.currency }}</td>
+              <td>{% if ev.url %}<a href="{{ ev.url }}" target="_blank" rel="noopener">{{ ev.event }}</a>{% else %}{{ ev.event }}{% endif %}</td>
+              <td>
+                {% if ev.impact == 'High' %}<span class="badge text-bg-danger">High</span>
+                {% elif ev.impact == 'Medium' %}<span class="badge text-bg-warning">Medium</span>
+                {% elif ev.impact == 'Low' %}<span class="badge text-bg-success">Low</span>
+                {% else %}<span class="text-muted">{{ ev.impact }}</span>{% endif %}
+              </td>
+              <td>{{ ev.actual }}</td>
+              <td>{{ ev.forecast }}</td>
+              <td>{{ ev.previous }}</td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="7" class="text-muted">No events.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% empty %}
+  <div class="text-muted">No calendar data.</div>
+{% endfor %}
+
+{% endblock %}
