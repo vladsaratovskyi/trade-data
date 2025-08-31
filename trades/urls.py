@@ -8,6 +8,8 @@ from .views import (
     StrategyDetailView,
     StrategyCreateView,
     StrategyDeleteView,
+    crypto_chart_view,
+    crypto_klines_api,
     stats_view,
     trade_image,
     bulk_delete_trades,
@@ -27,6 +29,9 @@ urlpatterns = [
     path("strategies/add/", StrategyCreateView.as_view(), name="strategy_add"),
     path("strategies/view/<int:pk>/", StrategyDetailView.as_view(), name="strategy_detail"),
     path("strategies/delete/<int:pk>/", StrategyDeleteView.as_view(), name="strategy_delete"),
+    # Charts
+    path("charts/crypto/", crypto_chart_view, name="charts_crypto"),
+    path("charts/crypto/data/", crypto_klines_api, name="charts_crypto_data"),
     path("bulk-delete/", bulk_delete_trades, name="bulk_delete"),
     path("image/<int:pk>/<str:kind>/", trade_image, name="image"),  # kind: ltf|mtf|stf
     path("stats/", stats_view, name="stats"),

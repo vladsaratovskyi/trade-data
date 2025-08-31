@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from django.db.models import Avg, Count, Q
-from django.http import Http404, HttpResponse
+from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, render, redirect
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, ListView, UpdateView, DetailView
@@ -385,6 +385,85 @@ def news_view(request):
             "calendar_error": cal_res["error"],
         },
     )
+
+
+def crypto_chart_view(request):
+    symbol = (request.GET.get("symbol") or "BTCUSDT").upper()
+    # Binance intervals: 1m,3m,5m,15m,30m,1h,2h,4h,6h,8h,12h,1d,3d,1w,1M
+    interval = (request.GET.get("interval") or "1h").lower()
+    if interval not in {"1m","3m","5m","15m","30m","1h","2h","4h","6h","8h","12h","1d","3d","1w","1M"}:
+        interval = "1h"
+    mode = (request.GET.get("mode") or "candles").lower()
+    if mode not in {"candles", "line"}:
+        mode = "candles"
+    # Limit default candles to reasonable amount for performance
+    limit = 500
+    context = {
+        "symbol": symbol,
+        "interval": interval,
+        "mode": mode,
+        "limit": limit,
+        # A few popular symbols for quick access
+        "symbols": [
+            "BTCUSDT","ETHUSDT","BNBUSDT","SOLUSDT","XRPUSDT","ADAUSDT","DOGEUSDT","DOTUSDT","TRXUSDT","MATICUSDT",
+        ],
+        "intervals": ["1m","5m","15m","1h","4h","1d"],
+    }
+    return render(request, "trades/crypto_chart.html", context)
+
+
+# In-memory cache for Binance klines to reduce rate limits / flakiness
+_KLINES_CACHE: Dict[str, Any] = {"data": {}, "ts": {}}
+
+
+def _fetch_binance_klines(symbol: str, interval: str, limit: int = 500) -> List[List[Any]]:
+    base = "https://api.binance.com/api/v3/klines"
+    params = {"symbol": symbol, "interval": interval, "limit": str(limit)}
+    headers = {
+        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
+        "Accept": "application/json,text/plain,*/*",
+    }
+    timeout = 10
+    if requests:
+        r = requests.get(base, params=params, headers=headers, timeout=timeout)
+        r.raise_for_status()
+        return r.json()  # type: ignore[no-any-return]
+    # urllib fallback
+    import urllib.parse, urllib.request, json as pyjson
+    url = base + "?" + urllib.parse.urlencode(params)
+    req = urllib.request.Request(url, headers=headers)
+    with urllib.request.urlopen(req, timeout=timeout) as resp:  # nosec B310
+        return pyjson.loads(resp.read().decode("utf-8", errors="ignore"))
+
+
+def crypto_klines_api(request):
+    symbol = (request.GET.get("symbol") or "BTCUSDT").upper().strip()
+    interval = (request.GET.get("interval") or "1h").strip()
+    limit_str = request.GET.get("limit") or "500"
+    try:
+        limit = max(1, min(1000, int(limit_str)))
+    except ValueError:
+        limit = 500
+    allowed = {"1m","3m","5m","15m","30m","1h","2h","4h","6h","8h","12h","1d","3d","1w","1M"}
+    if interval not in allowed:
+        interval = "1h"
+
+    # Short TTL cache (30s) per (symbol, interval, limit)
+    key = f"{symbol}:{interval}:{limit}"
+    now = time.time()
+    ttl = 30
+    cached = _KLINES_CACHE["data"].get(key)
+    cts = _KLINES_CACHE["ts"].get(key, 0)
+    if cached is not None and (now - cts) < ttl:
+        return JsonResponse({"klines": cached})
+
+    try:
+        data = _fetch_binance_klines(symbol, interval, limit)
+        _KLINES_CACHE["data"][key] = data
+        _KLINES_CACHE["ts"][key] = now
+        return JsonResponse({"klines": data})
+    except Exception as exc:  # pragma: no cover - network dependent
+        return JsonResponse({"error": "Failed to fetch Binance data."}, status=502)
 
 
 def _fetch_forex_factory_calendar_html() -> str:

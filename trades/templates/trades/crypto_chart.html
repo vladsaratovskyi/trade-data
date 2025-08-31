@@ -1,0 +1,234 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="mb-0">Crypto Price Chart</h2>
+  <div>
+    <a class="btn btn-outline-secondary" href="{% url 'trades:charts_crypto' %}?symbol={{ symbol }}&interval={{ interval }}">Refresh</a>
+  </div>
+</div>
+
+<form id="chart-controls" class="row g-3 align-items-end mb-3">
+  <div class="col-md-4">
+    <label class="form-label">Symbol</label>
+    <select id="symbol" class="form-select">
+      {% for s in symbols %}
+        <option value="{{ s }}" {% if s == symbol %}selected{% endif %}>{{ s }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-4">
+    <label class="form-label">Interval</label>
+    <select id="interval" class="form-select">
+      {% for iv in intervals %}
+        <option value="{{ iv }}" {% if iv == interval %}selected{% endif %}>{{ iv }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-4 d-flex gap-2">
+    <div class="flex-grow-1">
+      <label class="form-label">Mode</label>
+      <select id="mode" class="form-select">
+        <option value="candles" {% if mode == 'candles' %}selected{% endif %}>Candles</option>
+        <option value="line" {% if mode == 'line' %}selected{% endif %}>Line</option>
+      </select>
+    </div>
+    <button type="button" id="loadBtn" class="btn btn-primary ms-auto">Load</button>
+  </div>
+</form>
+
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span id="chart-title">{{ symbol }} — {{ interval }} ({% if mode == 'line' %}close{% else %}candlesticks{% endif %})</span>
+    <span class="small text-muted">Data: Binance</span>
+  </div>
+  <div class="card-body">
+    <div id="lc-container" style="height:360px;"></div>
+    <canvas id="priceChart" height="240" class="d-none"></canvas>
+    <div id="errorBox" class="alert alert-warning mt-3 d-none"></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-chart-financial@3.3.0/dist/chartjs-chart-financial.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
+<script>
+  (function(){
+    const elSymbol = document.getElementById('symbol');
+    const elInterval = document.getElementById('interval');
+    const elMode = document.getElementById('mode');
+    const elBtn = document.getElementById('loadBtn');
+    const errorBox = document.getElementById('errorBox');
+    const titleEl = document.getElementById('chart-title');
+    const canvas = document.getElementById('priceChart');
+    const ctx = canvas.getContext('2d');
+    const lcContainer = document.getElementById('lc-container');
+
+    let chart;
+    let lcChart; let lcSeries;
+
+    function showError(msg){
+      errorBox.textContent = msg;
+      errorBox.classList.remove('d-none');
+    }
+    function clearError(){
+      errorBox.classList.add('d-none');
+      errorBox.textContent = '';
+    }
+
+    const KL_API = "{% url 'trades:charts_crypto_data' %}";
+    async function fetchKlines(symbol, interval, limit){
+      const url = `${KL_API}?symbol=${encodeURIComponent(symbol)}&interval=${encodeURIComponent(interval)}&limit=${limit||500}`;
+      const resp = await fetch(url, {cache: 'no-store'});
+      if(!resp.ok){
+        const j = await resp.json().catch(() => ({}));
+        throw new Error(j.error || `API error: ${resp.status}`);
+      }
+      const j = await resp.json();
+      return j.klines || [];
+    }
+
+    function toDataset(klines){
+      // Each kline item: [ openTime, open, high, low, close, volume, closeTime, ... ]
+      const labels = klines.map(k => new Date(k[0]));
+      const closes = klines.map(k => parseFloat(k[4]));
+      return {labels, closes};
+    }
+
+    function toCandles(klines){
+      return klines.map(k => ({
+        time: Math.floor(k[0] / 1000),
+        open: parseFloat(k[1]),
+        high: parseFloat(k[2]),
+        low: parseFloat(k[3]),
+        close: parseFloat(k[4])
+      }));
+    }
+
+    function renderChart(labels, closes, symbol, interval){
+      const data = {
+        labels,
+        datasets: [{
+          label: `${symbol} close`,
+          data: closes,
+          borderColor: '#0d6efd',
+          backgroundColor: 'rgba(13,110,253,.08)',
+          borderWidth: 1.5,
+          pointRadius: 0,
+          tension: 0.15,
+        }]
+      };
+      const options = {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: {
+            type: 'time',
+            time: { unit: 'hour' },
+            ticks: { maxTicksLimit: 12 }
+          },
+          y: {
+            ticks: { callback: v => v.toLocaleString() }
+          }
+        },
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => `Close: ${ctx.parsed.y}`
+            }
+          }
+        }
+      };
+      if(chart){ chart.destroy(); }
+      chart = new Chart(ctx, { type: 'line', data, options });
+      titleEl.textContent = `${symbol} — ${interval} (close)`;
+    }
+
+    function renderCandles(candles, symbol, interval){
+      titleEl.textContent = `${symbol} — ${interval} (candlesticks)`;
+      // Prefer Lightweight Charts if available
+      if (window.LightweightCharts && typeof LightweightCharts.createChart === 'function') {
+        // Toggle visibility
+        canvas.classList.add('d-none');
+        lcContainer.classList.remove('d-none');
+        if(lcChart){ lcChart.remove(); lcChart = null; }
+        lcChart = LightweightCharts.createChart(lcContainer, {
+          layout: { textColor: '#212529', background: { type: 'solid', color: 'white' } },
+          timeScale: { timeVisible: true, secondsVisible: false },
+          grid: { vertLines: { color: '#eee' }, horzLines: { color: '#eee' } },
+          rightPriceScale: { borderColor: '#eee' },
+        });
+        if (typeof lcChart.addCandlestickSeries === 'function') {
+          lcSeries = lcChart.addCandlestickSeries({ upColor: '#0abb87', downColor: '#e55353', borderVisible: false, wickUpColor: '#0abb87', wickDownColor: '#e55353' });
+          lcSeries.setData(candles);
+          // Resize handler
+          function resize(){
+            const rect = lcContainer.getBoundingClientRect();
+            lcChart.applyOptions({ width: Math.floor(rect.width), height: Math.max(240, Math.floor(rect.height)) });
+          }
+          resize();
+          window.addEventListener('resize', resize, { passive: true });
+          return;
+        }
+      }
+      // Fallback: Chart.js financial (candlestick)
+      lcContainer.classList.add('d-none');
+      canvas.classList.remove('d-none');
+      const finData = candles.map(c => ({ x: c.time * 1000, o: c.open, h: c.high, l: c.low, c: c.close }));
+      if(chart){ chart.destroy(); }
+      chart = new Chart(ctx, {
+        type: 'candlestick',
+        data: { datasets: [{ label: `${symbol} OHLC`, data: finData }] },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          parsing: false,
+          scales: {
+            x: { type: 'time', time: { unit: 'hour' } },
+            y: { ticks: { callback: v => v.toLocaleString() } }
+          },
+          plugins: { legend: { display: false } }
+        }
+      });
+    }
+
+    async function load(){
+      clearError();
+      const symbol = elSymbol.value.toUpperCase();
+      const interval = elInterval.value;
+      const mode = elMode.value;
+      // Toggle chart containers upfront
+      if(mode === 'line'){
+        lcContainer.classList.add('d-none');
+        canvas.classList.remove('d-none');
+      }
+      try{
+        const klines = await fetchKlines(symbol, interval, 500);
+        if(mode === 'line'){
+          const {labels, closes} = toDataset(klines);
+          renderChart(labels, closes, symbol, interval);
+        } else {
+          const candles = toCandles(klines);
+          renderCandles(candles, symbol, interval);
+        }
+        const url = new URL(window.location.href);
+        url.searchParams.set('symbol', symbol);
+        url.searchParams.set('interval', interval);
+        url.searchParams.set('mode', mode);
+        history.replaceState(null, '', url);
+      }catch(err){
+        console.error(err);
+        showError('Failed to load Binance data (network blocked or rate limited).');
+      }
+    }
+
+    elBtn.addEventListener('click', load);
+    // Auto load initial state from server context
+    load();
+  })();
+</script>
+
+{% endblock %}
