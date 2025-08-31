@@ -110,6 +110,30 @@ class TradeListView(ListView):
             "by_type": list(by_type),
             "by_direction": list(by_direction),
         }
+        # High impact news/events from the economic calendar
+        try:
+            cal_res = _get_calendar_cached(force_refresh=False)
+            high_events = []
+            for day in cal_res.get("calendar", []) or []:
+                label = str(day.get("label") or "")
+                for ev in (day.get("events") or []):
+                    if (ev.get("impact") or "").strip().lower() == "high":
+                        high_events.append({
+                            "date": label,
+                            "time": ev.get("time") or "—",
+                            "currency": ev.get("currency") or "",
+                            "event": ev.get("event") or "",
+                            "url": ev.get("url") or "",
+                        })
+                        if len(high_events) >= 10:
+                            break
+                if len(high_events) >= 10:
+                    break
+            ctx["high_impact_events"] = high_events
+            ctx["calendar_error"] = cal_res.get("error")
+        except Exception:
+            ctx["high_impact_events"] = []
+            ctx["calendar_error"] = "Calendar unavailable."
         return ctx
 
 
@@ -248,110 +272,7 @@ def bulk_delete_trades(request):
     return redirect("trades:list")
 
 
-def _fetch_forex_factory_html() -> str:
-    url = "https://www.forexfactory.com/news"
-    headers = {
-        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-    }
-    timeout = 10
-    if requests:
-        resp = requests.get(url, headers=headers, timeout=timeout)
-        resp.raise_for_status()
-        return resp.text
-    # Fallback to stdlib
-    import urllib.request
-    req = urllib.request.Request(url, headers=headers)
-    with urllib.request.urlopen(req, timeout=timeout) as r:  # nosec B310
-        return r.read().decode("utf-8", errors="ignore")
-
-
-def _parse_forex_factory_news(html: str, limit: int = 30) -> List[Dict[str, str]]:
-    items: List[Dict[str, str]] = []
-    base = "https://www.forexfactory.com"
-    if BeautifulSoup:
-        soup = BeautifulSoup(html, "html.parser")
-        # Prefer semantic <article> blocks if present
-        articles = soup.select("article")
-        for art in articles:
-            a = art.find("a", href=True)
-            if not a:
-                continue
-            href = a.get("href", "")
-            if href.startswith("/"):
-                href = base + href
-            title = a.get_text(strip=True) or art.get_text(strip=True)
-            if not title:
-                continue
-            # Optional summary/time if available
-            summary = ""
-            p = art.find("p")
-            if p:
-                summary = p.get_text(strip=True)
-            time_text = ""
-            t = art.find("time")
-            if t:
-                time_text = t.get_text(strip=True)
-            items.append({"title": title, "url": href, "summary": summary, "time": time_text})
-            if len(items) >= limit:
-                return items
-        if items:
-            return items
-        # Fallback: any links with /news/ in href
-        seen: set[str] = set()
-        for a in soup.find_all("a", href=True):
-            href = a.get("href", "")
-            if "/news/" not in href:
-                continue
-            title = a.get_text(strip=True)
-            if not title:
-                continue
-            url = href
-            if url.startswith("/"):
-                url = base + url
-            key = (title + url)[:300]
-            if key in seen:
-                continue
-            seen.add(key)
-            items.append({"title": title, "url": url, "summary": "", "time": ""})
-            if len(items) >= limit:
-                break
-        return items
-
-    # Regex fallback if BeautifulSoup is unavailable
-    for m in re.finditer(r"<a[^>]+href=\"(?P<href>/news/[^\"]+)\"[^>]*>(?P<title>.*?)</a>", html, re.I | re.S):
-        raw_title = m.group("title")
-        # strip tags
-        title = re.sub(r"<[^>]+>", "", raw_title).strip()
-        if not title:
-            continue
-        url = base + m.group("href")
-        items.append({"title": title, "url": url, "summary": "", "time": ""})
-        if len(items) >= limit:
-            break
-    return items
-
-
-_NEWS_CACHE: Dict[str, Any] = {"ts": 0.0, "items": [], "error": None}
 _CAL_CACHE: Dict[str, Any] = {"ts": 0.0, "groups": [], "error": None}
-
-
-def _get_news_cached(force_refresh: bool = False, ttl: int = 600) -> Dict[str, Any]:
-    now = time.time()
-    if not force_refresh and (now - _NEWS_CACHE["ts"]) < ttl and _NEWS_CACHE["items"]:
-        return {"items": _NEWS_CACHE["items"], "error": _NEWS_CACHE["error"]}
-    error: Optional[str] = None
-    items: List[Dict[str, str]] = []
-    try:
-        html = _fetch_forex_factory_html()
-        items = _parse_forex_factory_news(html, limit=40)
-        if not items:
-            error = "Could not parse news items from ForexFactory."
-    except Exception as exc:  # pragma: no cover - network dependent
-        error = "Failed to fetch news."
-    _NEWS_CACHE.update({"ts": now, "items": items, "error": error})
-    return {"items": items, "error": error}
-
 
 def _get_calendar_cached(force_refresh: bool = False, ttl: int = 600) -> Dict[str, Any]:
     now = time.time()
@@ -372,15 +293,13 @@ def _get_calendar_cached(force_refresh: bool = False, ttl: int = 600) -> Dict[st
 
 
 def news_view(request):
+    # Render only the Economic Calendar; ForexFactory news removed
     refresh = request.GET.get("refresh") == "1"
-    news_res = _get_news_cached(force_refresh=refresh)
     cal_res = _get_calendar_cached(force_refresh=refresh)
     return render(
         request,
         "trades/news.html",
         {
-            "items": news_res["items"],
-            "error": news_res["error"],
             "calendar": cal_res["calendar"],
             "calendar_error": cal_res["error"],
         },

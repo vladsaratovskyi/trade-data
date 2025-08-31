@@ -26,6 +26,31 @@
     </div>
 
     <div class="card mt-3">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span>High Impact News</span>
+        <a class="btn btn-sm btn-outline-primary" href="{% url 'trades:news' %}" title="Open full calendar">Calendar</a>
+      </div>
+      {% if calendar_error %}
+        <div class="alert alert-warning m-2">{{ calendar_error }}</div>
+      {% endif %}
+      <ul class="list-group list-group-flush">
+        {% for ev in high_impact_events %}
+          <li class="list-group-item">
+            <div class="d-flex justify-content-between">
+              <span class="small text-muted text-nowrap">{{ ev.date }} {{ ev.time }}</span>
+              <span class="badge text-bg-danger">High</span>
+            </div>
+            <div class="small">
+              {% if ev.url %}<a href="{{ ev.url }}" target="_blank" rel="noopener">{{ ev.currency }} — {{ ev.event }}</a>{% else %}{{ ev.currency }} — {{ ev.event }}{% endif %}
+            </div>
+          </li>
+        {% empty %}
+          <li class="list-group-item text-muted">No high impact events.</li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <div class="card mt-3">
       <div class="card-header">By Type</div>
       <ul class="list-group list-group-flush">
         {% for row in stats.by_type %}
